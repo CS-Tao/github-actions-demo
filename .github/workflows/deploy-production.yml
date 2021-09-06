@@ -19,13 +19,14 @@ jobs:
         id: node-cache
         with:
           path: ./node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Setup Node.js environment
+            ${{ runner.os }}-yarn-${{ matrix.node-version }}
+      - name: Setup Node@${{ matrix.node-version }} environment
         uses: actions/setup-node@v2.4.0
         with:
-          node-version: 14.15.0
+          node-version: ${{ matrix.node-version }}
+          check-latest: true
           cache: yarn
           cache-dependency-path: yarn.lock
       - name: Build project
@@ -41,25 +42,26 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    needs: build
 
     strategy:
       matrix:
         node-version: [10.x, 12.x, 14.x, 15.x]
 
-    needs: build
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
         id: node-cache
         with:
           path: ./node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Setup Node.js environment
+            ${{ runner.os }}-yarn-${{ matrix.node-version }}
+      - name: Setup Node@${{ matrix.node-version }} environment
         uses: actions/setup-node@v2.4.0
         with:
-          node-version: 14.15.0
+          node-version: ${{ matrix.node-version }}
+          check-latest: true
           cache: yarn
           cache-dependency-path: yarn.lock
       - name: Build project
@@ -69,14 +71,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: test
+
+    strategy:
+      matrix:
+        node-version: [14.x]
+
     steps:
       - uses: actions/cache@v2
         id: node-cache
         with:
           path: ./node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ matrix.node-version }}-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-yarn-${{ matrix.node-version }}
       - name: Download artifacts
         uses: actions/download-artifact@v2
         with:
